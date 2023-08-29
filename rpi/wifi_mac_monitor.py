@@ -1,7 +1,9 @@
+import argparse
 import subprocess
 import time
 import xml.etree.ElementTree as ET
 
+import requests
 from statemachine import StateMachine, State
 
 
@@ -27,23 +29,56 @@ class MacAddressMonitoringMachine(StateMachine):
         return f"Running {event} from {source.id} to {target.id}{message}"
 
 
-network_address = '192.168.0.1/24'
-# mac_address = '28:CD:C1:04:80:97'
-mac_address = '28:CD:C1:04:7F:69'
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--network",
+                        action="store",
+                        required=True,
+                        dest="network_address",
+                        help="The network address")
 
-sm = MacAddressMonitoringMachine()
+    parser.add_argument("--mac",
+                        action="store",
+                        required=True,
+                        dest="mac_address",
+                        help="The mac address")
 
-if mac_status(network_address, mac_address) != 'present':
-    sm.send('cycle')
+    parser.add_argument("--url",
+                        action="store",
+                        required=True,
+                        dest="rest_url",
+                        help="The REST API URL")
 
-print(sm.current_state.id)
+    args = parser.parse_args()
 
-current = sm.current_state.id
+    #    network_address = '192.168.0.1/24'
+    # mac_address = '28:CD:C1:04:80:97'
+    #    mac_address = '28:CD:C1:04:7F:69'
 
-while True:
-    sample = mac_status(network_address, mac_address)
-    if sample != current:
-        print(f'{current}->{sample}')
+    sm = MacAddressMonitoringMachine()
+
+    # Since we initialized the state machine to 'present' as the
+    # initial state, we need to verify that.
+    if mac_status(args.network_address, args.mac_address) != 'present':
         sm.send('cycle')
-        current = sample
-    time.sleep(45)
+
+    # print(sm.current_state.id)
+
+    current = sm.current_state.id
+
+    while True:
+        sample = mac_status(args.network_address, args.mac_address)
+        if sample != current:
+            print(f'{current}->{sample}')
+            sm.send('cycle')
+            current = sample
+            rest_call = args.rest_url + sample
+            resp = requests.post(rest_call, headers={'content-type': 'application/json'})
+            if resp.status_code != 200:
+                raise RuntimeError(f'POST failed with status code {resp.status_code}')
+
+        time.sleep(45)
+
+
+if __name__ == '__main__':
+    main()
