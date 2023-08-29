@@ -51,10 +51,6 @@ def main():
 
     args = parser.parse_args()
 
-    #    network_address = '192.168.0.1/24'
-    # mac_address = '28:CD:C1:04:80:97'
-    #    mac_address = '28:CD:C1:04:7F:69'
-
     sm = MacAddressMonitoringMachine()
 
     # Since we initialized the state machine to 'present' as the
@@ -69,7 +65,7 @@ def main():
     while True:
         sample = mac_status(args.network_address, args.mac_address)
         if sample != current:
-            print(f'{current}->{sample}')
+            # print(f'{current}->{sample}')
             sm.send('cycle')
             current = sample
             rest_call = args.rest_url + sample
