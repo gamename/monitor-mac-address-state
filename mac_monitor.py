@@ -89,6 +89,7 @@ def main():
             sm.send('cycle')
             current = sample
             rest_call = args.rest_url + sample
+            # Sent a post request to the REST API
             resp = requests.post(rest_call, headers={'content-type': 'application/json'})
             if resp.status_code != 200:
                 raise RuntimeError(f'POST failed with status code {resp.status_code}')
