@@ -1,0 +1,1 @@
+This utility happened because I wanted some way to be notified when a certain cell phone joined (or left) my wifi network. 
