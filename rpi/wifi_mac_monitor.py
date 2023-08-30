@@ -24,10 +24,6 @@ class MacAddressMonitoringMachine(StateMachine):
     absent = State()
     cycle = (present.to(absent) | absent.to(present))
 
-    def before_cycle(self, event: str, source: State, target: State, message: str = ""):
-        message = ". " + message if message else ""
-        return f"Running {event} from {source.id} to {target.id}{message}"
-
 
 def main():
     parser = argparse.ArgumentParser()
