@@ -1,3 +1,6 @@
+"""
+This script monitors a network for a given mac address and reports the status
+"""
 import argparse
 import subprocess
 import time
@@ -8,6 +11,13 @@ from statemachine import StateMachine, State
 
 
 def mac_status(net, mac):
+    """
+    Get the status of a mac address on a network
+
+    :param net: The network name (e.g. 192.168.0.1/24)
+    :param mac: The mac address to monitor
+    :return: either 'present' or 'absent'
+    """
     process = subprocess.Popen(['sudo', 'nmap', '-oX', '/tmp/nmap.xml', '-sn', net],
                                stdout=subprocess.PIPE)
     process.wait()
@@ -20,6 +30,14 @@ def mac_status(net, mac):
 
 
 class MacAddressMonitoringMachine(StateMachine):
+    """
+    A state machine that monitors a network for the presence of a given mac address
+    """
+    # Define the states and transitions
+    # The initial state is 'present'
+    # The 'absent' state is used when the mac address is not found
+    # The 'present' state is used when the mac address is found
+    # The 'cycle' state is used to transition between the 'present' and 'absent' states
     present = State(initial=True)
     absent = State()
     cycle = (present.to(absent) | absent.to(present))
@@ -45,12 +63,18 @@ def main():
                         dest="rest_url",
                         help="The REST API URL")
 
+    parser.add_argument("--sleep",
+                        action="store",
+                        required=False,
+                        default=47,
+                        dest="sleep_time",
+                        help="Sleep time between checks")
+
     args = parser.parse_args()
 
     sm = MacAddressMonitoringMachine()
 
-    # Since we initialized the state machine to 'present' as the
-    # initial state, we need to verify that.
+    # Set the state machine to match the current mac status
     if mac_status(args.network_address, args.mac_address) != 'present':
         sm.send('cycle')
 
@@ -69,7 +93,7 @@ def main():
             if resp.status_code != 200:
                 raise RuntimeError(f'POST failed with status code {resp.status_code}')
 
-        time.sleep(45)
+        time.sleep(args.sleep_time)
 
 
 if __name__ == '__main__':
